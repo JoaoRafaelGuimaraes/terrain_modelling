@@ -1,0 +1,32 @@
+# do not modify these
+root: <%= ENV.fetch('BENCHMARK_SESSION_DIR', File.expand_path(File.dirname(__FILE__))) %>
+name: simulation
+socket_name: DEM_Simulation
+attach: false
+tmux_options: -f /etc/ctu-mrs/tmux.conf
+# you can modify these
+startup_window: teleop
+
+windows:
+  - simulation_stack:
+      layout: tiled
+      panes:
+        - source /root/limo_ws/install/setup.bash && ros2 launch limo_cerrado_sim limo_cerrado.launch.py
+  - teleop:
+      layout: tiled
+      panes:
+        - sleep 10 && source /root/limo_ws/install/setup.bash && ros2 run teleop_twist_keyboard teleop_twist_keyboard
+  - ground_segmentation:
+      layout: tiled
+      panes:
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/livox/lidar   imu_topic:=/livox/imu   use_sim_time:=true
+  - terrain_modelling:
+      layout: tiled
+      panes:
+        - sleep 15 && source /root/mrs_ws/install/setup.bash && ros2 launch terrain_modelling terrain_modelling.launch.py use_sim_time:=true
+  
+   
+   
+        
+       
+    

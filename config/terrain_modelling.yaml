@@ -1,0 +1,35 @@
+terrain_modelling_node:
+  ros__parameters:
+    # ── topics ───────────────────────────────────────────────────────────
+    ground_topic: /ground_segmentation/ground_points      # feeds the DEM
+    obstacle_topic: /ground_segmentation/obstacle_points  # gets normalized
+    output_topic: /terrain/obstacle_points_hag            # z := height above ground
+    dem_topic: /terrain/dem                               # grid as PointCloud2, for RViz
+
+    # World frame the grid is anchored to. Must be gravity-aligned and drift
+    # free enough to accumulate in: wheel odometry that carries no roll/pitch
+    # will not do.
+    map_frame: odom
+    transform_tolerance: 0.1
+
+    # ── grid ─────────────────────────────────────────────────────────────
+    # Coverage is shape * cell_size, spanning [origin, origin + coverage].
+    # origin is fixed in the world and must never track the robot, or the
+    # accumulated cells stop meaning anything.
+    cell_size: 0.5
+    origin_x: -60.0
+    origin_y: -40.0
+    size_x: 200      # cells -> 100 m
+    size_y: 160      # cells ->  80 m
+
+    # ── surface ──────────────────────────────────────────────────────────
+    # A cell holding a trunk never holds a ground return, so holes are the
+    # normal case, not the exception. Beyond fill_max_dist the ground under a
+    # point is guesswork and the point is dropped instead.
+    fill_max_dist: 3.0
+    smooth_cells: 3
+    refresh_rate: 2.0    # [Hz] rebuilding the surface is O(grid); the query is not
+
+    # ── output ───────────────────────────────────────────────────────────
+    publish_dem: true
+    dem_publish_rate: 1.0
