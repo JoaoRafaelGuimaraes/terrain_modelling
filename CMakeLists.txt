@@ -57,6 +57,18 @@ ament_target_dependencies(terrain_modelling_node
   grid_map_ros
 )
 
+# ── node: acumula quadros do lidar no map_frame ──────────────────────────────
+add_executable(scan_acum_node src/scan_acum.cpp)
+target_compile_features(scan_acum_node PUBLIC cxx_std_17)
+ament_target_dependencies(scan_acum_node
+  grid_map_core   # o grid_map_core define um plugin do Eigen para todo o pacote
+  rclcpp
+  sensor_msgs
+  tf2
+  tf2_ros
+  tf2_eigen
+)
+
 # ── offline driver: enable once tools/dem_offline.cpp exists ────────────────
 # Keeps iteration to seconds instead of bag + Gazebo + RViz.
 option(BUILD_TOOLS "Build offline tools" OFF)
@@ -74,7 +86,7 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-install(TARGETS terrain_modelling_node DESTINATION lib/${PROJECT_NAME})
+install(TARGETS terrain_modelling_node scan_acum_node DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

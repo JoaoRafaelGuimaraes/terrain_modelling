@@ -11,15 +11,21 @@ windows:
   - simulation_stack:
       layout: tiled
       panes:
-        - source /root/limo_ws/install/setup.bash && ros2 launch limo_cerrado_sim limo_cerrado.launch.py
+        - source /root/limo_ws/install/setup.bash && ros2 launch limo_cerrado_sim limo_cerrado.launch.py rviz:=true
   - teleop:
       layout: tiled
       panes:
         - sleep 10 && source /root/limo_ws/install/setup.bash && ros2 run teleop_twist_keyboard teleop_twist_keyboard
+  - points_accum:
+      layout: tiled
+      panes:
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run terrain_modelling scan_acum_node --ros-args -p use_sim_time:=true -p publish_in_sensor_frame:=true
+ 
   - ground_segmentation:
       layout: tiled
       panes:
-        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/livox/lidar   imu_topic:=/livox/imu   use_sim_time:=true
+        # - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run patchwork_plusplus patchwork_plusplus_exe --ros-args --params-file /root/mrs_ws/src/terrain_modelling/config/patchwork_limo.yaml
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/terrain/scan_acum   imu_topic:=/livox/imu   use_sim_time:=true
   - terrain_modelling:
       layout: tiled
       panes:

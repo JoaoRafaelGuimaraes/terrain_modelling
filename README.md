@@ -80,10 +80,10 @@ Abre a sessão tmux `simulation` (socket `DEM_Simulation`) com uma janela por pr
 | `ground_segmentation` | `ground_segmentation_ros2` sobre `/livox/lidar` + `/livox/imu` |
 | `terrain_modelling` | este nó |
 
-Para encerrar tudo:
+Para encerrar tudo, inclusive os processos do Gazebo que ficam para trás:
 
 ```bash
-tmux -L DEM_Simulation kill-server
+./kill.sh
 ```
 
 Para rodar só o nó, com a segmentação já no ar:

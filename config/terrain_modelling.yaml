@@ -1,7 +1,8 @@
 terrain_modelling_node:
   ros__parameters:
     # ── topics ───────────────────────────────────────────────────────────
-    ground_topic: /ground_segmentation/ground_points      # feeds the DEM
+    # ground_topic: /ground_segmentation/ground_points    # feeds the DEM (ground_segmentation_ros2)
+    ground_topic: /ground                                 # feeds the DEM (Patchwork++)
     obstacle_topic: /ground_segmentation/obstacle_points  # gets normalized
     output_topic: /terrain/obstacle_points_hag            # z := height above ground
     dem_topic: /terrain/dem                               # grid as PointCloud2, for RViz

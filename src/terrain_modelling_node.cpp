@@ -51,7 +51,8 @@ public:
     map_.setGeometry(grid_map::Length(32.0, 32.0), 0.3);
     // map_.setBasicLayers({"elevation"});
 
-    map_.add("elevation", 0.0);      // ou a altura do chão sob o robô na TF inicial
+    //map_.add("elevation", 0.0);      // ou a altura do chão sob o robô na TF inicial
+    map_.add("elevation", std::numeric_limits<float>::quiet_NaN()); // Inicializa com NaN para indicar que não há dados
     map_.add("variance", 1.0e4);     // σ ≈ 100 m  ->  K ≈ 1 na primeira medição
     map_.add("last_update", 0.0);
 
@@ -78,7 +79,8 @@ private:
   
   void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
   {
-    
+    // Leva a nuvem para o map_frame. Se ela ja vier no map_frame (ex.: scan_acum
+    // publicando no odom), o TF e a identidade.
     Eigen::Isometry3d cloud_to_map;
     try {
       auto tf = tf_buffer_->lookupTransform(
@@ -91,8 +93,6 @@ private:
       return;
     }
 
-    // PointCloud2Iterator walks the packed buffer by field name, so the node
-    // does not care how the fields are laid out or whether PCL is around.
     sensor_msgs::PointCloud2ConstIterator<float> it_x(*msg, "x");
     sensor_msgs::PointCloud2ConstIterator<float> it_y(*msg, "y");
     sensor_msgs::PointCloud2ConstIterator<float> it_z(*msg, "z");
@@ -106,10 +106,6 @@ private:
       points.emplace_back(cloud_to_map * Eigen::Vector3d(*it_x, *it_y, *it_z));
     }
 
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 2000,
-      "got %zu points in %s", points.size(), map_frame_.c_str());
-
-    
     const int rows = map_.getSize()(0);
     const int cols = map_.getSize()(1);
     std::vector<std::vector<std::vector<float>>> cell_z(
@@ -143,7 +139,9 @@ private:
         }
 
         const size_t n = z_values.size();
-
+        if (n < 2) {
+          continue; // Not enough points in this cell
+        }
         if (n % 2 == 1){ //ÍMPAR
           std::nth_element(z_values.begin(), z_values.begin() + n / 2, z_values.end());
           median = z_values[n / 2];
@@ -157,6 +155,13 @@ private:
         }
 
         //KALMAN UPDATE
+
+        if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))) { // Primeira vez é iniciado com a mediana
+          map_.at("elevation", grid_map::Index(i,j)) = median;
+          //map_.at("variance", grid_map::Index(i,j)) = 1.0e4; // Inicializa a variância com um valor alto
+          map_.at("last_update", grid_map::Index(i,j)) = static_cast<float>(time_now);
+          continue;
+        }
 
         //step 1: PROPAGATE A POSTERIORI ESTIMATE
         grid_map::Index index = grid_map::Index(i,j);
