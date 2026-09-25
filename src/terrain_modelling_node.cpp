@@ -15,6 +15,9 @@
 #include <grid_map_core/grid_map_core.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include <grid_map_core/iterators/SpiralIterator.hpp>
+
+
 
 using namespace grid_map;
 
@@ -97,14 +100,17 @@ private:
     sensor_msgs::PointCloud2ConstIterator<float> it_y(*msg, "y");
     sensor_msgs::PointCloud2ConstIterator<float> it_z(*msg, "z");
 
-    std::vector<Eigen::Vector3d> points;
-    points.reserve(msg->width * msg->height);
+    std::vector<Eigen::Vector3d> points_map;
+
+    points_map.reserve(msg->width * msg->height);
     for (; it_x != it_x.end(); ++it_x, ++it_y, ++it_z) {
       if (!std::isfinite(*it_x) || !std::isfinite(*it_y) || !std::isfinite(*it_z)) {
         continue;
       }
-      points.emplace_back(cloud_to_map * Eigen::Vector3d(*it_x, *it_y, *it_z));
+      points_map.emplace_back(cloud_to_map * Eigen::Vector3d(*it_x, *it_y, *it_z));
     }
+
+      
 
     const int rows = map_.getSize()(0);
     const int cols = map_.getSize()(1);
@@ -113,7 +119,7 @@ private:
 
      // SEPARAR A POINT CLOUD NO GRID
     
-    for (const auto & point : points) {
+    for (const auto & point : points_map) {
 
        grid_map::Index index;
        grid_map::Position position(point.x(), point.y());
@@ -155,16 +161,43 @@ private:
         }
 
         //KALMAN UPDATE
+        grid_map::Index index = grid_map::Index(i,j);
+        //R_k é a variancia da medição de Z. Pode ser calculada em função da distância do drone
+        grid_map::Position cell_position;
+        map_.getPosition(index, cell_position);
+        float distance = (Eigen::Vector3d(cell_position.x(), cell_position.y(), median) - cloud_to_map.translation()).norm();
+        // float r_k = 0.1 + 0.2*distance*distance; //r_k é atualizado de acordo com a distancia do ponto ao sensor
+        float r_k = 0.05*0.05 + std::pow(distance * 0.017, 2);   
 
         if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))) { // Primeira vez é iniciado com a mediana
-          map_.at("elevation", grid_map::Index(i,j)) = median;
-          //map_.at("variance", grid_map::Index(i,j)) = 1.0e4; // Inicializa a variância com um valor alto
+          
+          //Faz busca em espiral para iniciar o ponto com as N células mais próximas que não sejam NaN
+          float mean =0;
+          int counter = 0;
+          // Eigen::Vector2d pos = cell_position;
+          for (grid_map::SpiralIterator it(map_, cell_position, 1.0); !it.isPastEnd(); ++it) {
+            grid_map::Index neighbor_index = *it;
+            if (!std::isnan(map_.at("elevation", neighbor_index))) {
+              mean += map_.at("elevation", neighbor_index);
+              counter++;
+            }
+          }
+
+          if (counter > 0) {
+            mean = static_cast<double>(mean) / counter;
+            map_.at("variance", grid_map::Index(i,j)) = 0.03; 
+          }else {
+            mean = median; // Se não houver vizinhos válidos, mantém a mediana calculada
+          }
+
+         
+          map_.at("elevation", grid_map::Index(i,j)) = mean;
           map_.at("last_update", grid_map::Index(i,j)) = static_cast<float>(time_now);
-          continue;
+          
         }
 
         //step 1: PROPAGATE A POSTERIORI ESTIMATE
-        grid_map::Index index = grid_map::Index(i,j);
+        
         float x_k_1 = map_.at("elevation", index);
         float p_k_1 = map_.at("variance", index);
 
@@ -172,12 +205,11 @@ private:
         
         const double time_since_last_update = std::max(0.0, time_now - static_cast<double>(map_.at("last_update", index)));
 
-        float q = 0.00001; // Variância do processo, pode ser ajustada conforme necessário
+        float q = 0.0001; // Variância do processo, pode ser ajustada conforme necessário
         float p_k_priori = p_k_1 + q * time_since_last_update; //q é a variancia do processo. 
         // step 2: OBSERVATION UPDATE
       
-        //R_k é a variancia da medição de Z. Pode ser calculada em função da distância do drone
-        float r_k = 0.1; //Melhorar posteriormente
+        
         float K = p_k_priori / (r_k + p_k_priori);
         float x_k_posteriori = x_k_priori + K * (median - x_k_priori);
         float p_k_posteriori = (1 - K) * p_k_priori * (1-K) + K*r_k*K; 
