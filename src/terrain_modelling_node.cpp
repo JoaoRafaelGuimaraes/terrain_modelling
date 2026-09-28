@@ -137,7 +137,7 @@ private:
 
     double median = 0.0;
     for (int i = 0; i < rows; i++){
-      for (int j = 0; j < cols; j++){
+      for (int j = 0;j < cols; j++){
         
         auto & z_values = cell_z[i][j];
         if (z_values.empty()) {
@@ -167,34 +167,62 @@ private:
         map_.getPosition(index, cell_position);
         float distance = (Eigen::Vector3d(cell_position.x(), cell_position.y(), median) - cloud_to_map.translation()).norm();
         // float r_k = 0.1 + 0.2*distance*distance; //r_k é atualizado de acordo com a distancia do ponto ao sensor
-        float r_k = 0.05*0.05 + std::pow(distance * 0.017, 2);   
+        float r_k = 0.05*0.05 + std::pow(distance * 0.017, 2);   //Incerteza de medição
 
-        if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))) { // Primeira vez é iniciado com a mediana
-          
-          //Faz busca em espiral para iniciar o ponto com as N células mais próximas que não sejam NaN
-          float mean =0;
-          int counter = 0;
-          // Eigen::Vector2d pos = cell_position;
-          for (grid_map::SpiralIterator it(map_, cell_position, 1.0); !it.isPastEnd(); ++it) {
-            grid_map::Index neighbor_index = *it;
-            if (!std::isnan(map_.at("elevation", neighbor_index))) {
-              mean += map_.at("elevation", neighbor_index);
-              counter++;
-            }
+        // if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))) { // Primeira vez é iniciado com a mediana
+        //Implementar um filtro espacial!
+        //Faz busca em espiral para iniciar o ponto com as N células mais próximas que não sejam NaN
+        double elevation_mean =0;
+        double variance_mean = 0.0;
+        double elevation_sq_sum = 0.0;
+        int counter = 0;
+        // Eigen::Vector2d pos = cell_position;
+        for (grid_map::SpiralIterator it(map_, cell_position, 1.5); !it.isPastEnd(); ++it) { //Itera em espiral em 1,5m entorno da célula
+          grid_map::Index neighbor_index = *it;
+          if ((neighbor_index == index).all()) {
+            continue; // Pula a célula central
           }
-
-          if (counter > 0) {
-            mean = static_cast<double>(mean) / counter;
-            map_.at("variance", grid_map::Index(i,j)) = 0.03; 
-          }else {
-            mean = median; // Se não houver vizinhos válidos, mantém a mediana calculada
+          if (!std::isnan(map_.at("elevation", neighbor_index))) {
+            elevation_mean += map_.at("elevation", neighbor_index);
+            elevation_sq_sum += std::pow(map_.at("elevation", neighbor_index), 2);
+            variance_mean += map_.at("variance", neighbor_index);
+            counter++;
           }
-
-         
-          map_.at("elevation", grid_map::Index(i,j)) = mean;
-          map_.at("last_update", grid_map::Index(i,j)) = static_cast<float>(time_now);
-          
         }
+
+        if (counter > 3) { //FILTRO DE PICOS
+          elevation_mean = elevation_mean / counter;
+          double variancia_terreno = std::max(0.0, elevation_sq_sum / counter - std::pow(elevation_mean, 2)); // Variância do terreno = E[X^2] - (E[X])^2
+          variance_mean = variance_mean / counter;
+          double S = r_k + variance_mean + variancia_terreno + std::pow(0.05,2);
+          double nu = (median - elevation_mean);
+          
+          if (nu > 0 && nu*nu/S > 6.0){
+             //Medição mais de 3 desvios acima da média dos vizinhos: pico, a medição é descartada
+              continue;
+          }
+        }else {
+          // elevation_mean = median; // Se não houver vizinhos válidos, mantém a mediana calculada
+          // variance_mean = r_k; // Variância da medição
+          elevation_mean = 0.0; // Se não houver vizinhos válidos, descarta a medição
+
+        }
+
+        if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))){
+          
+          map_.at("elevation", grid_map::Index(i,j)) = elevation_mean; // Inicializa com a média dos vizinhos
+          if (counter > 3) {
+            // incerteza dos vizinhos + quanto o terreno pode variar entre células
+            map_.at("variance", grid_map::Index(i,j)) = variance_mean + 0.03;
+          }
+          // sem vizinhos suficientes a variância fica em 1e4: K≈1 e a célula vira a própria medição
+          map_.at("last_update", grid_map::Index(i,j)) = static_cast<float>(time_now);
+        }
+
+        
+        
+          
+        
 
         //step 1: PROPAGATE A POSTERIORI ESTIMATE
         
@@ -205,7 +233,7 @@ private:
         
         const double time_since_last_update = std::max(0.0, time_now - static_cast<double>(map_.at("last_update", index)));
 
-        float q = 0.0001; // Variância do processo, pode ser ajustada conforme necessário
+        float q = 0.00001; // Variância do processo, pode ser ajustada conforme necessário
         float p_k_priori = p_k_1 + q * time_since_last_update; //q é a variancia do processo. 
         // step 2: OBSERVATION UPDATE
       
