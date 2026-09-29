@@ -165,13 +165,18 @@ private:
         //R_k é a variancia da medição de Z. Pode ser calculada em função da distância do drone
         grid_map::Position cell_position;
         map_.getPosition(index, cell_position);
-        float distance = (Eigen::Vector3d(cell_position.x(), cell_position.y(), median) - cloud_to_map.translation()).norm();
-        // float r_k = 0.1 + 0.2*distance*distance; //r_k é atualizado de acordo com a distancia do ponto ao sensor
-        float r_k = 0.05*0.05 + std::pow(distance * 0.017, 2);   //Incerteza de medição
+        double distance = (Eigen::Vector3d(cell_position.x(), cell_position.y(), median) - cloud_to_map.translation()).norm();
+        
+        // Para entender melhor o r_k,  ler propagação de erro em https://infoscience.epfl.ch/server/api/core/bitstreams/20ca2fc1-b9b7-4316-a30a-938cef8b00a8/content
+        
+        double sigma_p = 0.03;
+        double sigma_B = 0.0;
+        double l = std::sqrt(pow(cell_position.x()-cloud_to_map.translation().x(),2) + pow(cell_position.y()-cloud_to_map.translation().y(), 2));
+        double B = std::acos(l/distance);
+        float r_k = pow(std::sin(B),2)*pow(sigma_p,2) + pow((distance*std::cos(B)),2)*pow(sigma_B,2); //Incerteza de medição
 
-        // if (std::isnan(map_.at("elevation", grid_map::Index(i,j)))) { // Primeira vez é iniciado com a mediana
-        //Implementar um filtro espacial!
-        //Faz busca em espiral para iniciar o ponto com as N células mais próximas que não sejam NaN
+
+      
         double elevation_mean =0;
         double variance_mean = 0.0;
         double elevation_sq_sum = 0.0;
@@ -195,7 +200,7 @@ private:
           double variancia_terreno = std::max(0.0, elevation_sq_sum / counter - std::pow(elevation_mean, 2)); // Variância do terreno = E[X^2] - (E[X])^2
           variance_mean = variance_mean / counter;
           double S = r_k + variance_mean + variancia_terreno + std::pow(0.05,2);
-          double nu = (median - elevation_mean);
+          double nu = (median - elevation_mean); //Quanto a medição distoa dos vizinhos
           
           if (nu > 0 && nu*nu/S > 6.0){
              //Medição mais de 3 desvios acima da média dos vizinhos: pico, a medição é descartada
