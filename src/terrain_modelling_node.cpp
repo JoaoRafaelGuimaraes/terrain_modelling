@@ -194,6 +194,9 @@ private:
             counter++;
           }
         }
+        if (distance>5.0 && counter < 5){
+          continue ; //Descarta a medição se estiver muito longe e não houver vizinhos suficientes
+        }
 
         if (counter > 3) { //FILTRO DE PICOS
           elevation_mean = elevation_mean / counter;
@@ -202,8 +205,8 @@ private:
           double S = r_k + variance_mean + variancia_terreno + std::pow(0.05,2);
           double nu = (median - elevation_mean); //Quanto a medição distoa dos vizinhos
           
-          if (nu > 0 && nu*nu/S > 6.0){
-             //Medição mais de 3 desvios acima da média dos vizinhos: pico, a medição é descartada
+          if (nu > 0 && nu/(std::sqrt(S)) > 2.0){ //Descarta se a medição estiver mais de 2 desvios acima da média dos vizinhos
+             
               continue;
           }
         }else {

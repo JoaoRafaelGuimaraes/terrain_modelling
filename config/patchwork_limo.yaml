@@ -1,34 +1,53 @@
 # Patchwork++ (kaancolak/patchwork-plusplus-ros2) para o LIMO Pro com Livox MID-360.
-# O no le /livox/lidar e publica /ground e /nonground. Os pontos saem no frame do sensor.
+# O no le /livox/lidar (o start.sh remapeia para /terrain/scan_acum) e publica
+# /ground e /nonground, no frame da nuvem de entrada (o do sensor).
+#
+# Como ele acha o chao, em cada patch do Concentric Zone Model:
+#   1. ordena os pontos por altura e tira a media dos num_lpr mais baixos (LPR);
+#   2. sementes = pontos ate th_seeds acima do LPR;
+#   3. ajusta um plano nas sementes (num_iter vezes);
+#   4. chao = pontos a ate th_dist desse plano.
+# Os ajustes abaixo apertam 1, 2 e 4 para o plano grudar no que esta por baixo
+# (solo) e nao no topo do capim. Ruido de alcance do Livox simulado: 2 cm.
 /**:
   ros__parameters:
     use_sim_time: true
 
-    sensor_height: 0.301    # altura do Livox acima do chao (m); a do KITTI era 1.723
+    sensor_height: 0.301    # base_link a 0.15 m do chao + Livox 0.151 m acima dele
 
     # Ground Plane Fitting
-    num_iter: 3             # iteracoes do PCA por patch
-    num_lpr: 20             # pontos mais baixos usados como representantes do chao
+    num_iter: 3             # iteracoes do ajuste de plano por patch
+    num_lpr: 10             # era 20. Menos pontos no LPR = LPR mais perto do ponto mais
+                            # baixo; com 20, sob vegetacao a media ja inclui capim
     num_min_pts: 10         # minimo de pontos para estimar o plano de um patch
-    th_seeds: 0.3           # sementes: ate th_seeds acima dos pontos mais baixos
-    th_dist: 0.125          # espessura do chao
-    th_seeds_v: 0.25
+    th_seeds: 0.10          # era 0.3. So pontos ate 10 cm acima do LPR viram semente;
+                            # com 0.3 o capim de ate 30 cm entrava no ajuste e puxava o plano
+    th_dist: 0.08           # era 0.125. Espessura do chao: 4x o ruido de 2 cm do sensor
+    th_seeds_v: 0.25        # sementes e espessura da estrutura vertical (R-VPF, troncos)
     th_dist_v: 0.1
-    max_range: 20.0         # o no le max_range/min_range (o yaml original usa max_r/min_r, ignorados)
-    min_range: 2.7          # ponto cego do MID-360 no LIMO: ~2.4 m
-    uprightness_thr: 0.707  # normal a ate 45 graus da vertical
+    max_range: 16.0         # era 20. O DEM cobre +-16 m; alem disso os patches sao grandes
+                            # e so passam pelo teste de inclinacao (fora dos 4 aneis proximos)
+    min_range: 2.7          # ponto cego do MID-360 no LIMO: ~2.4 m (-7 graus a 0.3 m)
+    uprightness_thr: 0.866  # era 0.707 (45 graus). Normal a ate 30 graus da vertical: patch
+                            # com vegetacao misturada inclina o plano e vira nao-chao
 
-    # pontos abaixo de margin * sensor_height (no frame do sensor) nao viram semente
-    adaptive_seed_selection_margin: -1.2
+    # No zone 0, pontos abaixo de margin * sensor_height (frame do sensor) nao entram no LPR.
+    # Era -1.2 (-0.36 m: so 6 cm abaixo do chao sob o robo), que jogava fora o solo de
+    # qualquer depressao a 3-4 m e deixava o LPR subir para o capim. -2.0 = 30 cm abaixo.
+    # Na simulacao nao ha retorno refletido abaixo do solo, que e o que esse corte evita.
+    adaptive_seed_selection_margin: -2.0
 
-    # Concentric Zone Model
+    # Concentric Zone Model. Os aneis "proximos" (testes de elevacao/planeza adaptativos)
+    # sao os 4 primeiros, porque elevation_thresholds tem 4 posicoes; o codigo guarda o
+    # historico em arrays fixos de 4 (update_elevation_[4]), entao nao aumentar.
     num_zones: 4
     num_sectors_each_zone: [16, 32, 54, 32]
     mum_rings_each_zone: [2, 4, 4, 4]         # "mum" e o nome que o no declara
     elevation_thresholds: [0.0, 0.0, 0.0, 0.0]
     flatness_thresholds: [0.0, 0.0, 0.0, 0.0]
 
-    enable_RNR: true        # na simulacao a intensidade e constante (100): o RNR nao remove nada
+    enable_RNR: true        # so atua em pontos abaixo de -(sensor_height + 0.8) m, que o LIMO nao
+                            # tem (e a intensidade simulada e 0): na pratica nao remove nada
     enable_RVPF: true
     enable_TGR: true
     RNR_ver_angle_thr: -15.0

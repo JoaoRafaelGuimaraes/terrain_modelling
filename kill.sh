@@ -18,6 +18,8 @@ PATTERNS=(
   '/lib/depth_image_proc/point_cloud_xyzrgb_node'
   '/lib/ground_segmentation_ros2/ground_segmentation_ros2_node'
   '/lib/terrain_modelling/terrain_modelling_node'
+  '/lib/terrain_modelling/scan_acum_node'
+  '/lib/patchwork_plusplus/patchwork_plusplus_exe'
   '/lib/teleop_twist_keyboard/teleop_twist_keyboard'
   '/lib/rviz2/rviz2'
   '/lib/rmw_zenoh_cpp/rmw_zenohd'                     # roteador zenoh subido pelo launch

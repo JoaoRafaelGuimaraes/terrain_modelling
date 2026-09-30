@@ -1,3 +1,6 @@
+# Segmentador de solo: GROUND_SEG=gseg (padrao) ou patchwork, escolhido pelo start.sh
+<% ground_seg = ENV.fetch('GROUND_SEG', 'gseg') %>
+<% ground_topic = ground_seg == 'patchwork' ? '/ground' : '/ground_segmentation/ground_points' %>
 # do not modify these
 root: <%= ENV.fetch('BENCHMARK_SESSION_DIR', File.expand_path(File.dirname(__FILE__))) %>
 name: simulation
@@ -24,12 +27,17 @@ windows:
   - ground_segmentation:
       layout: tiled
       panes:
-        # - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run patchwork_plusplus patchwork_plusplus_exe --ros-args --params-file /root/mrs_ws/src/terrain_modelling/config/patchwork_limo.yaml
+<% if ground_seg == 'patchwork' %>
+        # Patchwork++: le /livox/lidar (fixo no no), publica /ground e /nonground no frame da entrada
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run patchwork_plusplus patchwork_plusplus_exe --ros-args --params-file /root/mrs_ws/src/terrain_modelling/config/patchwork_limo.yaml -r /livox/lidar:=/terrain/scan_acum
+<% else %>
+        # GSeg3D: publica /ground_segmentation/ground_points no base_link
         - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/terrain/scan_acum   imu_topic:=/livox/imu   use_sim_time:=true
+<% end %>
   - terrain_modelling:
       layout: tiled
       panes:
-        - sleep 15 && source /root/mrs_ws/install/setup.bash && ros2 launch terrain_modelling terrain_modelling.launch.py use_sim_time:=true
+        - sleep 15 && source /root/mrs_ws/install/setup.bash && ros2 launch terrain_modelling terrain_modelling.launch.py use_sim_time:=true ground_topic:=<%= ground_topic %>
   
    
    
