@@ -26,6 +26,7 @@ find_package(tf2_eigen REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(grid_map_core REQUIRED)
 find_package(grid_map_ros REQUIRED)
+find_package(grid_map_msgs REQUIRED)
 
 # ── library: the terrain model itself ───────────────────────────────────────
 # Deliberately free of ROS so it can be exercised offline (a plain main() over

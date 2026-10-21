@@ -1,0 +1,10 @@
+cat > .gitignore <<'EOF'
+build/
+install/
+log/
+__pycache__/
+*.py[cod]
+*.log
+.vscode/
+.vscode-root/
+EOF
