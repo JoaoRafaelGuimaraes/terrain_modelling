@@ -6,7 +6,7 @@ terrain_modelling_node:
     obstacle_topic: /ground_segmentation/obstacle_points  # gets normalized
     output_topic: /terrain/obstacle_points_hag            # z := height above ground
     dem_topic: /terrain/dem                               # grid as PointCloud2, for RViz
-    sensor_frame: base_link
+
     # World frame the grid is anchored to. Must be gravity-aligned and drift
     # free enough to accumulate in: wheel odometry that carries no roll/pitch
     # will not do.

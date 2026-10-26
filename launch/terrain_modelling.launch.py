@@ -12,10 +12,7 @@ from launch_ros.actions import Node
 def launch_setup(context, *args, **kwargs):
     parameters = [
         LaunchConfiguration("config_yaml"),
-        {
-            "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "seg": LaunchConfiguration("seg"),
-        },
+        {"use_sim_time": LaunchConfiguration("use_sim_time")},
     ]
     # Empty keeps the ground_topic from the yaml; the start.sh sets it per segmenter.
     ground_topic = LaunchConfiguration("ground_topic").perform(context)
@@ -40,7 +37,6 @@ def generate_launch_description():
     )
 
     args = [
-        DeclareLaunchArgument('seg', default_value='gseg'),
         DeclareLaunchArgument("config_yaml", default_value=default_config),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument(

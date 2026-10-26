@@ -6,13 +6,13 @@ SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 cd "$SCRIPTPATH"
 
-# Segmentador de solo: ./start.sh [gseg|patchwork|csf]  (padrao: gseg)
+# Segmentador de solo: ./start.sh [gseg|patchwork]  (padrao: gseg)
 # A session.yml liga a saida do escolhido na entrada do terrain_modelling.
 export GROUND_SEG="${1:-${GROUND_SEG:-gseg}}"
 case "$GROUND_SEG" in
-  gseg|patchwork|csf) ;;
+  gseg|patchwork) ;;
   *)
-    echo "Uso: $0 [gseg|patchwork|csf]   (recebido: '$GROUND_SEG')" >&2
+    echo "Uso: $0 [gseg|patchwork]   (recebido: '$GROUND_SEG')" >&2
     exit 1
     ;;
 esac
