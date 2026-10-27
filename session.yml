@@ -14,30 +14,54 @@ windows:
   - simulation_stack:
       layout: tiled
       panes:
-        - source /root/limo_ws/install/setup.bash && ros2 launch limo_cerrado_sim limo_cerrado.launch.py rviz:=true
+        # livox_format:=custom: o FAST-LIO (lidar_type 1) le o CustomMsg, com o tempo de cada ponto. /livox/lidar deixa de ser
+        # PointCloud2; o resto da pilha le as nuvens do FAST-LIO (/cloud_registered_body e /cloud_registered).
+        # Arvores do forest_clustered_10min sobre o relevo do Cerrado (worlds/gen_relief_world.py); z:=auto do launch vale aqui.
+        - source /root/limo_ws/install/setup.bash && export GZ_SIM_RESOURCE_PATH=/root/mrs_ws/src/octomap_gazebo_forest/models:/root/mrs_ws/src/octomap_gazebo_forest/models/forest-gen-models:$GZ_SIM_RESOURCE_PATH && ros2 launch limo_cerrado_sim limo_cerrado.launch.py livox_format:=custom world:=/root/mrs_ws/src/terrain_modelling/worlds/forest_clustered_10min_relief_limo.sdf
+        # Mesma floresta no chao plano. z fixo: o z:=auto do launch le o relevo do Cerrado, que este mundo nao tem.
+        # - source /root/limo_ws/install/setup.bash && export GZ_SIM_RESOURCE_PATH=/root/mrs_ws/src/octomap_gazebo_forest/models:/root/mrs_ws/src/octomap_gazebo_forest/models/forest-gen-models:$GZ_SIM_RESOURCE_PATH && ros2 launch limo_cerrado_sim limo_cerrado.launch.py livox_format:=custom world:=/root/mrs_ws/src/terrain_modelling/worlds/forest_clustered_10min_limo.sdf z:=0.06
+        # Cerrado (relevo real):
+        # - source /root/limo_ws/install/setup.bash && ros2 launch limo_cerrado_sim limo_cerrado.launch.py livox_format:=custom
   - teleop:
       layout: tiled
       panes:
         - sleep 10 && source /root/limo_ws/install/setup.bash && ros2 run teleop_twist_keyboard teleop_twist_keyboard
+  - fast_lio:
+      layout: tiled
+      panes:
+        # FAST-LIO com camera_init alinhado a gravidade (patch em src/FAST_LIO/src/IMU_Processing.hpp). So sobe com o robo
+        # parado: ele estima a gravidade em ~0,1 s de IMU. Nao mexa no LIMO ate aparecer "IMU Initial Done".
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && /usr/bin/python3 /root/mrs_ws/src/terrain_modelling/scripts/wait_imu_still.py; ros2 launch fast_lio mapping.launch.py config_path:=/root/mrs_ws/config config_file:=mid360_sim.yaml use_sim_time:=true rviz:=false
   - points_accum:
       layout: tiled
       panes:
-        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run terrain_modelling scan_acum_node --ros-args -p use_sim_time:=true -p publish_in_sensor_frame:=true
+        # Varredura do FAST-LIO no frame body (IMU), ja sem distorcao de movimento; acumula no camera_init e publica no body
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run terrain_modelling scan_acum_node --ros-args -p use_sim_time:=true -p publish_in_sensor_frame:=true -p point_cloud_topic:=/cloud_registered_body -p map_frame:=camera_init
  
   - ground_segmentation:
       layout: tiled
       panes:
 <% if ground_seg == 'patchwork' %>
-        # Patchwork++: le /livox/lidar (fixo no no), publica /ground e /nonground no frame da entrada
+        # Patchwork++: le /livox/lidar (fixo no no) remapeado para o scan_acum, publica /ground e /nonground no frame da entrada (body)
         - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 run patchwork_plusplus patchwork_plusplus_exe --ros-args --params-file /root/mrs_ws/src/terrain_modelling/config/patchwork_limo.yaml -r /livox/lidar:=/terrain/scan_acum
 <% else %>
-        # GSeg3D: publica /ground_segmentation/ground_points no base_link
-        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/terrain/scan_acum   imu_topic:=/livox/imu   use_sim_time:=true
+        # GSeg3D: publica /ground_segmentation/ground_points no body (config/gseg_fastlio.yaml: robot_frame body).
+        # Nivela a nuvem pela atitude do FAST-LIO, republicada como IMU no body pelo segundo painel.
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py   pointcloud_topic:=/terrain/scan_acum   imu_topic:=/terrain/body_attitude   params_file:=/root/mrs_ws/src/terrain_modelling/config/gseg_fastlio.yaml   use_sim_time:=true
+        - sleep 10 && source /root/mrs_ws/install/setup.bash && /usr/bin/python3 /root/mrs_ws/src/terrain_modelling/scripts/fastlio_attitude_imu.py
 <% end %>
   - terrain_modelling:
       layout: tiled
       panes:
-        - sleep 15 && source /root/mrs_ws/install/setup.bash && ros2 launch terrain_modelling terrain_modelling.launch.py use_sim_time:=true ground_topic:=<%= ground_topic %>
+        # DEM ancorado no camera_init do FAST-LIO. ros2 run (e nao a launch) para passar o map_frame sem recompilar o pacote.
+        - sleep 15 && source /root/mrs_ws/install/setup.bash && ros2 run terrain_modelling terrain_modelling_node --ros-args --params-file /root/mrs_ws/src/terrain_modelling/config/terrain_modelling.yaml -p use_sim_time:=true -p ground_topic:=<%= ground_topic %> -p map_frame:=camera_init
+  - tree_mapper:
+      layout: tiled
+      panes:
+        # Detector no mesmo frame do DEM (camera_init): /cloud_registered ja vem nele. O GridMap sai em /terrain/obstacle_points_hag (output_topic do terrain_modelling.yaml).
+        - sleep 20 && source /root/mrs_ws/install/setup.bash && ros2 launch tree_mapper tree_stack_interface.launch.py input_cloud_topic:=/cloud_registered target_frame:=camera_init grid_map_topic:=/terrain/obstacle_points_hag
+        # RViz da normalizacao: nuvem no camera_init (cinza) x banda normalizada (cor = altura sobre o DEM) + deteccoes
+        - sleep 20 && source /root/mrs_ws/install/setup.bash && __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia rviz2 -d /root/mrs_ws/src/terrain_modelling/rviz/tree_mapper_debug.rviz --ros-args -p use_sim_time:=true
   
    
    

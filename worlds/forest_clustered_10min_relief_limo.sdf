@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <!--
+    forest_clustered_10min_relief_limo.sdf: as arvores de forest_clustered_10min_limo.sdf, no chao do Cerrado 32 x 32 m
+    (relevo de 0 a 2,7 m em x/y [-16, 16]; nao ha chao fora do quadrado). Gerado por gen_relief_world.py.
+    Unicas colisoes: o terreno e as arvores. O nome "cerrado" e obrigatorio: o limo_cerrado.launch.py
+    faz o spawn em -world cerrado; o z:=auto do launch le o mesmo terrain_collision.stl usado aqui.
+    Modelos: octomap_gazebo_forest/models e models/forest-gen-models no GZ_SIM_RESOURCE_PATH (feito na
+    session.yml); model://cerrado_32x32_15_arvores vem do share do limo_cerrado_sim (feito pelo launch).
+  -->
+  <world name="cerrado">
+    <physics name="2ms" type="ignored">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1</real_time_factor>
+    </physics>
+    <gravity>0 0 -9.81</gravity>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+
+    <scene>
+      <ambient>0.38 0.40 0.43 1</ambient>
+      <background>0.66 0.78 0.88 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light name="sun" type="directional">
+      <pose>0 0 15 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <diffuse>0.95 0.91 0.80 1</diffuse>
+      <specular>0.12 0.12 0.10 1</specular>
+      <direction>-0.45 0.35 -0.82</direction>
+      <attenuation><range>1000</range><constant>1</constant><linear>0</linear><quadratic>0</quadratic></attenuation>
+    </light>
+
+    <include><uri>model://benchmark_fg_tree_2</uri><name>clustered_tree_001</name><pose>-4.433 -8.179 1.115 0 0 1.366179</pose></include><!-- forest-gen-models/tree_2; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_002</name><pose>-7.747 -5.767 0.740 0 0 1.085065</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_003</name><pose>-5.482 -6.317 0.805 0 0 1.793679</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_004</name><pose>-9.216 -11.612 1.245 0 0 -2.533834</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_fg_tree_2</uri><name>clustered_tree_005</name><pose>-9.572 -9.383 1.210 0 0 2.677053</pose></include><!-- forest-gen-models/tree_2; DAP=0.230 m -->
+    <include><uri>model://benchmark_fg_tree_2</uri><name>clustered_tree_006</name><pose>-11.658 -9.515 1.286 0 0 -1.840851</pose></include><!-- forest-gen-models/tree_2; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_007</name><pose>-12.825 -13.386 1.216 0 0 -1.221388</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_fg_tree_2</uri><name>clustered_tree_008</name><pose>-6.963 -3.225 0.543 0 0 -1.954422</pose></include><!-- forest-gen-models/tree_2; DAP=0.230 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_009</name><pose>-9.068 -7.367 1.050 0 0 -2.018293</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_010</name><pose>-9.129 -3.146 0.432 0 0 2.987648</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_011</name><pose>-1.482 -2.338 0.946 0 0 0.348683</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_012</name><pose>-10.612 -7.774 1.129 0 0 2.349811</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_fg_tree_9</uri><name>clustered_tree_013</name><pose>-10.551 -10.565 1.298 0 0 0.025585</pose></include><!-- forest-gen-models/tree_9; DAP=0.160 m -->
+    <include><uri>model://benchmark_fg_tree_2</uri><name>clustered_tree_014</name><pose>-7.431 -9.282 1.107 0 0 -1.761055</pose></include><!-- forest-gen-models/tree_2; DAP=0.230 m -->
+    <include><uri>model://benchmark_fg_tree_9</uri><name>clustered_tree_015</name><pose>-12.281 -10.930 1.345 0 0 -1.482372</pose></include><!-- forest-gen-models/tree_9; DAP=0.160 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_016</name><pose>7.358 5.043 2.473 0 0 2.961630</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_017</name><pose>11.882 10.506 2.119 0 0 -1.855001</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_018</name><pose>4.236 12.322 1.627 0 0 2.090120</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_019</name><pose>13.224 14.449 2.292 0 0 2.729478</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_fg_tree_9</uri><name>clustered_tree_020</name><pose>9.474 9.281 2.287 0 0 2.413201</pose></include><!-- forest-gen-models/tree_9; DAP=0.160 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_021</name><pose>9.170 11.397 2.346 0 0 0.353014</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_022</name><pose>5.307 8.762 2.545 0 0 -0.850191</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_023</name><pose>14.148 5.706 2.093 0 0 -1.052146</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_024</name><pose>8.959 7.506 2.202 0 0 0.698039</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_025</name><pose>5.156 10.355 2.030 0 0 1.393852</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_026</name><pose>6.876 6.874 2.469 0 0 1.307319</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_027</name><pose>12.228 8.773 1.891 0 0 1.428574</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_028</name><pose>-3.464 5.289 2.006 0 0 0.493923</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_029</name><pose>-6.839 9.226 1.120 0 0 0.093189</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_030</name><pose>-7.874 11.017 1.369 0 0 -2.928878</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_031</name><pose>-6.734 4.538 1.320 0 0 0.394128</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_032</name><pose>-0.433 9.557 1.867 0 0 0.683781</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_033</name><pose>-5.390 7.834 1.377 0 0 0.543032</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_034</name><pose>-9.845 12.527 1.539 0 0 1.086158</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_fg_tree_9</uri><name>clustered_tree_035</name><pose>-2.608 10.755 1.761 0 0 -2.392010</pose></include><!-- forest-gen-models/tree_9; DAP=0.160 m -->
+    <include><uri>model://benchmark_new_tree_1</uri><name>clustered_tree_036</name><pose>-4.100 11.284 1.590 0 0 1.203632</pose></include><!-- new_tree_1; DAP=0.230 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_037</name><pose>9.227 -8.703 1.362 0 0 -1.035112</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_038</name><pose>9.102 -10.759 1.285 0 0 0.317244</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+    <include><uri>model://benchmark_world_jean_tree</uri><name>clustered_tree_039</name><pose>10.840 -9.553 1.302 0 0 2.421746</pose></include><!-- world_jean_tree; DAP=0.210 m -->
+
+    <model name="terrain">
+      <static>true</static>
+      <link name="link">
+        <visual name="visual">
+          <geometry><mesh><uri>model://cerrado_32x32_15_arvores/meshes/terrain.dae</uri></mesh></geometry>
+          <cast_shadows>true</cast_shadows>
+        </visual>
+        <collision name="collision">
+          <geometry><mesh><uri>model://cerrado_32x32_15_arvores/meshes/terrain_collision.stl</uri></mesh></geometry>
+          <surface><friction><ode><mu>0.85</mu><mu2>0.85</mu2></ode></friction></surface>
+        </collision>
+      </link>
+    </model>
+  </world>
+</sdf>

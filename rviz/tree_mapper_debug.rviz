@@ -1,0 +1,99 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 40
+    # Desligado: o robo (base_link) esta na arvore do odom de ground truth, que nao se liga ao camera_init do FAST-LIO.
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: false
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+    # Trajetoria do FAST-LIO (body no camera_init)
+    - Class: rviz_default_plugins/Path
+      Name: FAST-LIO path
+      Enabled: true
+      Topic:
+        Value: /path
+      Color: 255; 255; 0
+    # --- DEM do terrain_modelling (mesma configuracao do limo_cerrado.rviz) ---
+    - Class: grid_map_rviz_plugin/GridMap
+      Name: DEM (elevation x variance)
+      Enabled: true
+      Topic:
+        Value: /terrain/obstacle_points_hag
+        Reliability Policy: Best Effort
+      Height Transformer: GridMapLayer
+      Height Layer: elevation
+      Color Transformer: IntensityLayer
+      Color Layer: variance
+      Use Rainbow: true
+      Invert Rainbow: false
+      Autocompute Intensity Bounds: false
+      Min Intensity: 0
+      Max Intensity: 0.015
+      Show Grid Lines: false
+      Alpha: 0.6
+      History Length: 1
+    # --- vegetation_candidate_detector ----------------------------------------
+    # Nuvem ja no target_frame (camera_init), antes da normalizacao: z absoluto.
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Detector - nuvem no odom (z absoluto)
+      Enabled: true
+      Topic:
+        Value: /vegetation_candidate_debug/transformed_cloud
+        Reliability Policy: Best Effort
+      Style: Points
+      Size (Pixels): 2
+      Color Transformer: FlatColor
+      Color: 170; 170; 170
+      Decay Time: 0
+    # Pontos que sobraram na banda [band_z_min, band_z_max] DEPOIS da normalizacao:
+    # o z desenhado e a altura acima do DEM, nao a altura no odom.
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Detector - banda normalizada (z = altura sobre o DEM)
+      Enabled: true
+      Topic:
+        Value: /vegetation_candidate_debug/band_cloud
+        Reliability Policy: Best Effort
+      Style: Points
+      Size (Pixels): 4
+      Color Transformer: AxisColor
+      Axis: Z
+      Autocompute Value Bounds: false
+      Min Value: 0.35
+      Max Value: 2.1
+      Decay Time: 0
+    # --- classificador e mapa --------------------------------------------------
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Deteccoes do quadro (classifier)
+      Enabled: true
+      Topic:
+        Value: /tree_mapper/internal/detections_raw_markers
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Mapa de arvores (fuser)
+      Enabled: true
+      Topic:
+        Value: /tree_map_markers
+  Global Options:
+    Fixed Frame: camera_init
+    Background Color: 48; 48; 48
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 15
+      Pitch: 0.6
+      Yaw: 2.4
+      Target Frame: body
+Window Geometry:
+  Height: 900
+  Width: 1400

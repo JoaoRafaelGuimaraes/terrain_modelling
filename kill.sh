@@ -9,7 +9,7 @@ SOCKET=DEM_Simulation
 
 # Padroes da linha de comando (pgrep -f).
 PATTERNS=(
-  'ros2 launch (limo_cerrado_sim|ground_segmentation_ros2|terrain_modelling)'
+  'ros2 launch (limo_cerrado_sim|ground_segmentation_ros2|terrain_modelling|tree_mapper|fast_lio)'
   '(^| )gz sim'                                       # servidor e GUI do Gazebo
   '/lib/ros_gz_bridge/parameter_bridge'
   '/lib/ros_gz_sim/create'
@@ -21,6 +21,10 @@ PATTERNS=(
   '/lib/terrain_modelling/scan_acum_node'
   '/lib/patchwork_plusplus/patchwork_plusplus_exe'
   '/lib/teleop_twist_keyboard/teleop_twist_keyboard'
+  '/lib/tree_mapper/'                                 # nos Python do tree_mapper
+  '/lib/fast_lio/fastlio_mapping'
+  'wait_imu_still.py'
+  'fastlio_attitude_imu.py'
   '/lib/rviz2/rviz2'
   '/lib/rmw_zenoh_cpp/rmw_zenohd'                     # roteador zenoh subido pelo launch
 )

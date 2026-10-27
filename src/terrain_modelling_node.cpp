@@ -70,7 +70,7 @@ public:
 
 private:
 
-  void publishMap() //Transforma o mapa em PointCLoud2 para publicar
+  void publishMap() 
   { 
     map_.setTimestamp(now().nanoseconds());
 
@@ -170,7 +170,7 @@ private:
         // Para entender melhor o r_k,  ler propagação de erro em https://infoscience.epfl.ch/server/api/core/bitstreams/20ca2fc1-b9b7-4316-a30a-938cef8b00a8/content
         
         double sigma_p = 0.03;
-        double sigma_B = 0.0;
+        double sigma_B = 0.005;
         double l = std::sqrt(pow(cell_position.x()-cloud_to_map.translation().x(),2) + pow(cell_position.y()-cloud_to_map.translation().y(), 2));
         double B = std::acos(l/distance);
         float r_k = pow(std::sin(B),2)*pow(sigma_p,2) + pow((distance*std::cos(B)),2)*pow(sigma_B,2); //Incerteza de medição
